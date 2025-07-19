@@ -7,14 +7,16 @@ server:
   ingress:
     enabled: false
   extraArgs:
-  - --insecure # disables TLS for easier local access
+  - --insecure
+  - --rootpath=/argocd
 
 configs:
   params:
-    server.insecure: true # allows plain HTTP on /api
+    server.insecure: true
+    server.rootpath: /argocd
 
 dex:
-  enabled: false # disable if you don't need SSO
+  enabled: false
 
 redis:
   resources:

@@ -6,7 +6,7 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 
-helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace --values core/argo-cd-values.yaml
+helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace --values core/argocd-values.yaml
 
 helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler --namespace kube-system --values core/cluster-autoscaler-values.yaml
 
