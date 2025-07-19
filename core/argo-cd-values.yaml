@@ -1,0 +1,29 @@
+controller:
+  replicas: 1
+
+server:
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  extraArgs:
+  - --insecure # disables TLS for easier local access
+
+configs:
+  params:
+    server.insecure: true # allows plain HTTP on /api
+
+dex:
+  enabled: false # disable if you don't need SSO
+
+redis:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 128Mi
