@@ -1,0 +1,23 @@
+controller:
+  ingressClassResource:
+    name: nginx
+    enabled: true
+    default: true
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
+
+  ingressClass: nginx
+
+  service:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    externalTrafficPolicy: Local
+    type: LoadBalancer
+
+  publishService:
+    enabled: true
+
+  metrics:
+    enabled: true
