@@ -1,0 +1,34 @@
+grafana:
+  enabled: true
+  adminPassword: admin
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s/grafana"
+      serve_from_sub_path: true
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    ingressClassName: nginx
+    hosts:
+    - k8s.dakshayahuja.in
+    path: /grafana
+    tls:
+    - hosts:
+      - k8s.dakshayahuja.in
+      secretName: k8s-tls
+  dashboards:
+    default:
+      node-exporter-full:
+        gnetId: 1860
+        datasource: Prometheus
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+prometheusOperator:
+  admissionWebhooks:
+    enabled: true
