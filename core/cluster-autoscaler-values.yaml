@@ -1,0 +1,18 @@
+autoDiscovery:
+  clusterName: gitops-delivery-cluster
+
+awsRegion: us-east-1
+
+rbac:
+  serviceAccount:
+    create: true
+    name: cluster-autoscaler
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::135893647954:role/eks-cluster-autoscaler
+
+cloudProvider: aws
+
+extraArgs:
+  skip-nodes-with-system-pods: false
+  balance-similar-node-groups: true
+  expander: least-waste
