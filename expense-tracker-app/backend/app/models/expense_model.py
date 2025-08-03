@@ -9,5 +9,6 @@ class Expense(Base):
     title = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     category = Column(String, nullable=False)
+    date = Column(DateTime, default=datetime.now)
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)

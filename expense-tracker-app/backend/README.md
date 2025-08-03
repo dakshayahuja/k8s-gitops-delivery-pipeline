@@ -1,89 +1,165 @@
-# Expense Tracker API
+# Expense Tracker Backend
 
-This is a simple RESTful API for managing personal expenses.
+A FastAPI-based backend service for the Expense Tracker application with PostgreSQL database and Alembic migrations.
 
-# API Endpoints
+## 🛠️ Tech Stack
 
-### GET /expenses/
-Fetch all expenses.
+- **FastAPI**: Modern Python web framework
+- **PostgreSQL**: Production-ready database
+- **SQLAlchemy**: ORM for database operations
+- **Alembic**: Database migrations
+- **Pydantic**: Data validation
+- **Uvicorn**: ASGI server
 
-**Example:**
+## 🚀 Quick Start
+
+### Local Development
 ```bash
-http GET http://localhost:8000/expenses/
-```
+# Install dependencies
+pip install -r requirements.txt
 
----
-
-### GET /expenses/{id}
-Fetch a specific expense by ID.
-
-**Example:**
-```bash
-http GET http://localhost:8000/expenses/1
-```
-
----
-
-### POST /expenses/
-Create a new expense.
-
-**Required fields:**
-- `title` (string)
-- `amount` (float)
-- `category` (string)
-
-**Example:**
-```bash
-http POST http://localhost:8000/expenses/ title="Udaipur trip" amount=100 category="Travel"
-```
-
----
-
-### PUT /expenses/{id}
-Update an existing expense.
-
-**Required fields:**
-- `title` (string)
-- `amount` (float)
-- `category` (string)
-
-**Example:**
-```bash
-http PUT http://localhost:8000/expenses/2 title="Mumbai Trip" amount=300 category="Travel"
-```
-
----
-
-### DELETE /expenses/{id}
-Delete an expense by ID.
-
-**Example:**
-```bash
-http DELETE http://localhost:8000/expenses/1
-```
-
----
-# Alembic Commands
-
-To handle database migrations with Alembic:
-
-### Create a new revision
-```bash
-alembic revision --autogenerate -m "your message"
-```
-
-### Apply migrations
-```bash
-alembic upgrade head
-```
-
-### Roll back the last migration
-```bash
-alembic downgrade -1
-```
-
-Ensure that the `DATABASE_URL` environment variable is set correctly before running these commands:
-
-```bash
+# Set environment variables
 export DATABASE_URL=postgresql://postgres:devops123@localhost:5432/expenses
+
+# Run migrations
+python run_migration.py
+
+# Start server
+uvicorn app.main:app --reload
+```
+
+### Using Docker
+```bash
+# Build and start
+docker build -t expense-tracker-backend .
+docker run -p 8000:8000 expense-tracker-backend
+
+# Or using docker compose
+docker compose up backend
+```
+
+## 📚 API Endpoints
+
+### Expense Operations
+```bash
+# Get all expenses
+GET /expenses
+
+# Create expense
+POST /expenses
+{
+    "title": "Groceries",
+    "amount": 100.50,
+    "category": "Food",
+    "date": "2025-08-03T10:00:00"
+}
+
+# Get expense by ID
+GET /expenses/{id}
+
+# Update expense
+PUT /expenses/{id}
+
+# Delete expense
+DELETE /expenses/{id}
+```
+
+### Reports & Analytics
+```bash
+# Category-wise report
+GET /expenses/reports/categories
+
+# Monthly trends
+GET /expenses/reports/monthly?months=6
+
+# Summary statistics
+GET /expenses/reports/summary
+```
+
+### Settings & Utilities
+```bash
+# Get settings
+GET /expenses/settings
+
+# Update settings
+PUT /expenses/settings
+
+# Seed sample data
+POST /expenses/seed
+
+# Clear all data
+DELETE /expenses/clear
+```
+
+## 🗃️ Database Management
+
+### Migrations
+```bash
+# Create new migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback last migration
+alembic downgrade -1
+
+# Get migration history
+alembic history
+```
+
+### Database Schema
+```sql
+Table: expenses
+- id: Integer (Primary Key)
+- title: String
+- amount: Float
+- category: String
+- date: DateTime
+- created_at: DateTime
+- updated_at: DateTime
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+```bash
+# Required
+DATABASE_URL=postgresql://postgres:devops123@localhost:5432/expenses
+
+# Optional
+DEBUG=True
+```
+
+### CORS Configuration
+```python
+# Currently allows all origins for development
+allow_origins=["*"]
+```
+
+## 🧪 Testing
+
+```bash
+# Run tests
+pytest
+
+# Test coverage
+pytest --cov=app
+```
+
+## 📁 Project Structure
+```
+backend/
+├── app/
+│   ├── api/
+│   │   └── expense_routes.py
+│   ├── crud/
+│   │   └── expense_crud.py
+│   ├── models/
+│   │   └── expense_model.py
+│   ├── schemas/
+│   │   └── expense_schema.py
+│   └── main.py
+├── requirements.txt
+└── Dockerfile
 ```
