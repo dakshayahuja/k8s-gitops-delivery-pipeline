@@ -1,4 +1,15 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
   backend:
     build:
       context: ./backend
@@ -9,6 +20,8 @@ services:
       - backend/.env
     depends_on:
       - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:devops123@db:5432/expenses
 
   db:
     image: postgres:15
@@ -18,3 +31,8 @@ services:
       POSTGRES_DB: expenses
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
