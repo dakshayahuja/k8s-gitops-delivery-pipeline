@@ -1,23 +1,21 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from db.database import Base
 from datetime import datetime
 
-class Expense(Base):
-    __tablename__ = "expenses"
+class UserSettings(Base):
+    __tablename__ = "user_settings"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    title = Column(String, nullable=False)
-    amount = Column(Float, nullable=False)
-    category = Column(String, nullable=False)
-    date = Column(DateTime, default=datetime.now)
+    theme = Column(String, default="dark")
+    currency = Column(String, default="₹")
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationship
-    user = relationship("User", back_populates="expenses")
+    user = relationship("User", back_populates="settings")
 
 # Add relationship to User model
 from models.user_model import User
-User.expenses = relationship("Expense", back_populates="user")
+User.settings = relationship("UserSettings", back_populates="user", uselist=False) 

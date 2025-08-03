@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import expense_routes
+from api import expense_routes, auth_routes, user_settings_routes
 from db.database import engine, Base
 from core.migrate import run_migrations
 
@@ -21,4 +21,6 @@ def ping():
 
 run_migrations()
 
+app.include_router(auth_routes.router)
+app.include_router(user_settings_routes.router)
 app.include_router(expense_routes.router)

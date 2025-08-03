@@ -1,78 +1,77 @@
 # Expense Tracker Frontend
 
-A modern React application for tracking expenses with dark mode support, real-time currency updates, and a clean UI built with Tailwind CSS.
+A modern React application for tracking personal expenses with Google Sign-In authentication.
 
-## 🚀 Quick Start
+## Features
+
+- 🔐 Google Sign-In authentication
+- 💰 Track expenses with categories
+- 📊 Expense reports and analytics
+- 🌙 Dark/Light theme support
+- 💱 Multiple currency support
+- 📱 Responsive design
+
+## Setup
+
+### 1. Install Dependencies
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
 ```
 
-## 🛠️ Tech Stack
+### 2. Environment Variables
 
-- **React 19** - Latest React with hooks
-- **Vite** - Fast build tool and dev server
-- **Tailwind CSS** - Utility-first styling
-- **Axios** - API client
+Create a `.env` file in the frontend directory with the following variables:
 
-## 📂 Project Structure
-```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── ExpenseCard.jsx     # Individual expense display
-│   │   ├── ExpenseDetails.jsx  # Expense modal view
-│   │   ├── ExpenseList.jsx     # List of expenses
-│   │   ├── Reports.jsx         # Analytics & reports
-│   │   └── Settings.jsx        # App settings & preferences
-│   ├── App.jsx                 # Main application
-│   ├── main.jsx               # Entry point
-│   └── index.css              # Global styles
-├── public/                    # Static assets
-├── index.html                # HTML template
-└── vite.config.js           # Vite configuration
-```
-
-## ✨ Features
-
-### 💰 Expense Management
-- Add, view, and track expenses
-- Categorize expenses
-- Date-wise organization
-- Currency customization (₹, $, €, £)
-
-### 🎨 UI/UX
-- Dark/Light theme
-- Responsive design
-- Loading states
-- Error handling
-- Modal interactions
-- Clean animations
-
-### 📊 Reports & Analytics
-- Total expenses overview
-- Category-wise breakdown
-- Monthly trends
-- Visual data representation
-
-## 🔧 Configuration
-
-### Environment Variables
 ```env
-VITE_API_URL=http://localhost:8000  # Backend API URL
+# API Configuration
+VITE_API_URL=http://localhost:8000
+
+# Google OAuth Configuration
+# Get this from Google Cloud Console: https://console.cloud.google.com/
+VITE_GOOGLE_CLIENT_ID=your-google-client-id-here
 ```
 
-### Docker Support
+### 3. Google OAuth Setup
 
-#### Production Build
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google+ API
+4. Go to "Credentials" and create an OAuth 2.0 Client ID
+5. Add your domain to the authorized origins (e.g., `http://localhost:5173`)
+6. Copy the Client ID and add it to your `.env` file
+
+### 4. Run the Application
+
 ```bash
-docker build -t expense-tracker-frontend .
-docker run -p 80:80 expense-tracker-frontend
+npm run dev
 ```
+
+The application will be available at `http://localhost:5173`
+
+## Backend Setup
+
+Make sure the backend is running and the database is properly configured. The backend should be running on `http://localhost:8000` (or update the `VITE_API_URL` accordingly).
+
+## Authentication Flow
+
+1. Users click "Sign in with Google"
+2. Google OAuth popup appears
+3. User authenticates with Google
+4. Backend verifies the Google token
+5. Backend creates/updates user record
+6. Backend returns JWT token
+7. Frontend stores JWT token and uses it for API calls
+
+## User Data
+
+- All expenses are associated with the authenticated user
+- User settings (theme, currency) are stored per user
+- Data is isolated between users
+
+## Development
+
+- Built with React 18
+- Uses Vite for fast development
+- Tailwind CSS for styling
+- Axios for API calls

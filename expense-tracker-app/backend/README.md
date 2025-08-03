@@ -1,165 +1,142 @@
 # Expense Tracker Backend
 
-A FastAPI-based backend service for the Expense Tracker application with PostgreSQL database and Alembic migrations.
+A FastAPI backend for the Expense Tracker application with Google Sign-In authentication and PostgreSQL database.
 
-## 🛠️ Tech Stack
+## Features
 
-- **FastAPI**: Modern Python web framework
-- **PostgreSQL**: Production-ready database
-- **SQLAlchemy**: ORM for database operations
-- **Alembic**: Database migrations
-- **Pydantic**: Data validation
-- **Uvicorn**: ASGI server
+- 🔐 Google Sign-In authentication with JWT tokens
+- 💾 PostgreSQL database with SQLAlchemy ORM
+- 👤 User-specific expense management
+- ⚙️ User settings (theme, currency) storage
+- 📊 Expense reports and analytics
+- 🔄 Database migrations with Alembic
 
-## 🚀 Quick Start
+## Setup
 
-### Local Development
+### 1. Install Dependencies
+
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Set environment variables
-export DATABASE_URL=postgresql://postgres:devops123@localhost:5432/expenses
-
-# Run migrations
-python run_migration.py
-
-# Start server
-uvicorn app.main:app --reload
 ```
 
-### Using Docker
-```bash
-# Build and start
-docker build -t expense-tracker-backend .
-docker run -p 8000:8000 expense-tracker-backend
+### 2. Environment Variables
 
-# Or using docker compose
-docker compose up backend
+Create a `.env` file in the backend directory:
+
+```env
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/expense_tracker
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your-google-client-id-here
+
+# JWT Configuration
+JWT_SECRET=your-secret-key-here
 ```
 
-## 📚 API Endpoints
+### 3. Database Setup
 
-### Expense Operations
-```bash
-# Get all expenses
-GET /expenses
+1. Install PostgreSQL
+2. Create a database:
+   ```sql
+   CREATE DATABASE expense_tracker;
+   ```
+3. Run migrations:
+   ```bash
+   cd app
+   python3 -m alembic upgrade head
+   ```
 
-# Create expense
-POST /expenses
-{
-    "title": "Groceries",
-    "amount": 100.50,
-    "category": "Food",
-    "date": "2025-08-03T10:00:00"
-}
+### 4. Google OAuth Setup
 
-# Get expense by ID
-GET /expenses/{id}
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google+ API
+4. Go to "Credentials" and create an OAuth 2.0 Client ID
+5. Copy the Client ID and add it to your `.env` file
 
-# Update expense
-PUT /expenses/{id}
-
-# Delete expense
-DELETE /expenses/{id}
-```
-
-### Reports & Analytics
-```bash
-# Category-wise report
-GET /expenses/reports/categories
-
-# Monthly trends
-GET /expenses/reports/monthly?months=6
-
-# Summary statistics
-GET /expenses/reports/summary
-```
-
-### Settings & Utilities
-```bash
-# Get settings
-GET /expenses/settings
-
-# Update settings
-PUT /expenses/settings
-
-# Seed sample data
-POST /expenses/seed
-
-# Clear all data
-DELETE /expenses/clear
-```
-
-## 🗃️ Database Management
-
-### Migrations
-```bash
-# Create new migration
-alembic revision --autogenerate -m "description"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback last migration
-alembic downgrade -1
-
-# Get migration history
-alembic history
-```
-
-### Database Schema
-```sql
-Table: expenses
-- id: Integer (Primary Key)
-- title: String
-- amount: Float
-- category: String
-- date: DateTime
-- created_at: DateTime
-- updated_at: DateTime
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-# Required
-DATABASE_URL=postgresql://postgres:devops123@localhost:5432/expenses
-
-# Optional
-DEBUG=True
-```
-
-### CORS Configuration
-```python
-# Currently allows all origins for development
-allow_origins=["*"]
-```
-
-## 🧪 Testing
+### 5. Run the Application
 
 ```bash
-# Run tests
-pytest
-
-# Test coverage
-pytest --cov=app
+cd app
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## 📁 Project Structure
-```
-backend/
-├── app/
-│   ├── api/
-│   │   └── expense_routes.py
-│   ├── crud/
-│   │   └── expense_crud.py
-│   ├── models/
-│   │   └── expense_model.py
-│   ├── schemas/
-│   │   └── expense_schema.py
-│   └── main.py
-├── requirements.txt
-└── Dockerfile
-```
+The API will be available at `http://localhost:8000`
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/google` - Sign in with Google token
+- `GET /auth/me` - Get current user info
+- `POST /auth/logout` - Logout user
+
+### User Settings
+- `GET /user-settings` - Get user settings
+- `PUT /user-settings` - Update user settings
+
+### Expenses
+- `GET /expenses` - Get user's expenses
+- `POST /expenses` - Create new expense
+- `PUT /expenses/{id}` - Update expense
+- `DELETE /expenses/{id}` - Delete expense
+- `POST /expenses/seed` - Seed sample data
+- `DELETE /expenses/clear` - Clear all expenses
+
+### Reports
+- `GET /expenses/reports/categories` - Category report
+- `GET /expenses/reports/monthly` - Monthly report
+- `GET /expenses/reports/summary` - Summary statistics
+
+## Database Schema
+
+### Users Table
+- `id` - Primary key
+- `google_id` - Google user ID
+- `email` - User email
+- `name` - User name
+- `picture` - Profile picture URL
+- `created_at` - Account creation date
+- `updated_at` - Last update date
+- `is_active` - Account status
+
+### User Settings Table
+- `id` - Primary key
+- `user_id` - Foreign key to users
+- `theme` - UI theme preference
+- `currency` - Currency preference
+- `notifications` - Notification settings
+
+### Expenses Table
+- `id` - Primary key
+- `user_id` - Foreign key to users
+- `title` - Expense title
+- `amount` - Expense amount
+- `category` - Expense category
+- `date` - Expense date
+- `created_at` - Record creation date
+- `updated_at` - Last update date
+
+## Authentication Flow
+
+1. Frontend sends Google ID token to `/auth/google`
+2. Backend verifies token with Google
+3. Backend creates/updates user record
+4. Backend returns JWT token
+5. Frontend uses JWT token for authenticated requests
+
+## Security
+
+- JWT tokens for session management
+- Google token verification
+- User data isolation
+- CORS configuration for frontend
+- Environment variable configuration
+
+## Development
+
+- FastAPI for API framework
+- SQLAlchemy for ORM
+- Alembic for migrations
+- PostgreSQL for database
+- PyJWT for token handling
