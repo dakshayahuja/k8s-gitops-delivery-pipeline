@@ -1,21 +1,9 @@
 import { useState } from 'react';
 import ExpenseDetails from './ExpenseDetails';
+import { getCategoryEmoji, getCategoryColor } from '../utils/categoryMapping';
 
 const ExpenseCard = ({ expense, currency = '₹' }) => {
   const [showDetails, setShowDetails] = useState(false);
-
-  // Get category icon based on title
-  const getCategoryIcon = (title) => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('grocery') || lowerTitle.includes('food')) return '🛒';
-    if (lowerTitle.includes('internet') || lowerTitle.includes('wifi')) return '🌐';
-    if (lowerTitle.includes('movie') || lowerTitle.includes('entertainment')) return '🎬';
-    if (lowerTitle.includes('gym') || lowerTitle.includes('fitness')) return '💪';
-    if (lowerTitle.includes('bill') || lowerTitle.includes('utility')) return '📄';
-    if (lowerTitle.includes('transport') || lowerTitle.includes('uber')) return '🚗';
-    if (lowerTitle.includes('misc') || lowerTitle.includes('other')) return '📦';
-    return '💰';
-  };
 
   // Format date - use date field if available, otherwise fallback to created_at
   const formatDate = (dateString) => {
@@ -34,8 +22,8 @@ const ExpenseCard = ({ expense, currency = '₹' }) => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <span className="text-lg">{getCategoryIcon(expense.title)}</span>
+            <div className={`w-10 h-10 ${getCategoryColor(expense.category)} rounded-lg flex items-center justify-center`}>
+              <span className="text-lg">{getCategoryEmoji(expense.category)}</span>
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{expense.title}</h3>

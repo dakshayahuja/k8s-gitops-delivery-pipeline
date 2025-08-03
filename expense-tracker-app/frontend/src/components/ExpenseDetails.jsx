@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { getCategoryEmoji, getCategoryColor } from '../utils/categoryMapping';
 
 const ExpenseDetails = ({ expense, onClose, currency = '₹' }) => {
   const modalRef = useRef();
@@ -29,14 +30,9 @@ const ExpenseDetails = ({ expense, onClose, currency = '₹' }) => {
 
         <div className="space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+            <div className={`w-12 h-12 ${getCategoryColor(expense.category)} rounded-lg flex items-center justify-center`}>
               <span className="text-2xl">
-                {expense.title.toLowerCase().includes('grocery') ? '🛒' :
-                 expense.title.toLowerCase().includes('internet') ? '🌐' :
-                 expense.title.toLowerCase().includes('movie') ? '🎬' :
-                 expense.title.toLowerCase().includes('gym') ? '💪' :
-                 expense.title.toLowerCase().includes('bill') ? '📄' :
-                 expense.title.toLowerCase().includes('transport') ? '🚗' : '💰'}
+                {getCategoryEmoji(expense.category)}
               </span>
             </div>
             <div>

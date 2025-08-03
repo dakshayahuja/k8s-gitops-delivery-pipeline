@@ -9,26 +9,29 @@ const Settings = ({ onClose, onSettingsUpdate }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load current settings
+    // Load current settings every time modal opens
     loadSettings();
   }, []);
 
   const loadSettings = async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/user-settings`);
-      const savedCurrency = localStorage.getItem('currency') || '₹';
-      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const backendSettings = response.data;
       
+      // Use backend settings as primary source, fallback to localStorage
       setSettings({
-        ...response.data,
-        currency: savedCurrency,
-        theme: savedTheme,
+        currency: backendSettings.currency || localStorage.getItem('currency') || '₹',
+        theme: backendSettings.theme || localStorage.getItem('theme') || 'dark'
       });
     } catch (error) {
       console.error('Error loading settings:', error);
       // If there's an auth error, just use local storage values
       if (error.response?.status === 403) {
         console.log('Using local storage settings due to auth error');
+        setSettings({
+          currency: localStorage.getItem('currency') || '₹',
+          theme: localStorage.getItem('theme') || 'dark'
+        });
       }
     }
   };
