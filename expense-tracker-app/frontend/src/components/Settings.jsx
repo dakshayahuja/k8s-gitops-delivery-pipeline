@@ -4,8 +4,7 @@ import axios from 'axios';
 const Settings = ({ onClose, onSettingsUpdate }) => {
   const [settings, setSettings] = useState({
     currency: localStorage.getItem('currency') || '₹',
-    theme: localStorage.getItem('theme') || 'dark',
-    notifications: true
+    theme: localStorage.getItem('theme') || 'dark'
   });
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +15,7 @@ const Settings = ({ onClose, onSettingsUpdate }) => {
 
   const loadSettings = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/expenses/settings`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user-settings`);
       const savedCurrency = localStorage.getItem('currency') || '₹';
       const savedTheme = localStorage.getItem('theme') || 'dark';
       
@@ -27,13 +26,20 @@ const Settings = ({ onClose, onSettingsUpdate }) => {
       });
     } catch (error) {
       console.error('Error loading settings:', error);
+      // If there's an auth error, just use local storage values
+      if (error.response?.status === 403) {
+        console.log('Using local storage settings due to auth error');
+      }
     }
   };
 
   const saveSettings = async () => {
     setLoading(true);
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/expenses/settings`, settings);
+      await axios.put(`${import.meta.env.VITE_API_URL}/user-settings`, {
+        theme: settings.theme,
+        currency: settings.currency
+      });
       // Apply theme immediately
       if (settings.theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -47,6 +53,11 @@ const Settings = ({ onClose, onSettingsUpdate }) => {
       onClose();
     } catch (error) {
       console.error('Error saving settings:', error);
+      if (error.response?.status === 403) {
+        alert('Authentication error. Please sign in again.');
+      } else {
+        alert('Error saving settings. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

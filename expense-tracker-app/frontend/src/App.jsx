@@ -3,10 +3,13 @@ import axios from "axios";
 import ExpenseList from "./components/ExpenseList";
 import Settings from "./components/Settings";
 import Reports from "./components/Reports";
+import GoogleSignIn from "./components/GoogleSignIn";
+import { useAuth } from "./contexts/AuthContext";
 
 const App = () => {
+  const { user, loading, logout } = useAuth();
   const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showReports, setShowReports] = useState(false);
@@ -25,16 +28,11 @@ const App = () => {
   });
 
   useEffect(() => {
-    loadExpenses();
-    loadSettings();
-    // Apply theme on initial load
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    if (savedTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    if (user) {
+      loadExpenses();
+      loadSettings();
     }
-  }, []);
+  }, [user]);
 
   const loadExpenses = async () => {
     try {
@@ -43,23 +41,21 @@ const App = () => {
     } catch (error) {
       console.error("Error fetching expenses:", error);
     } finally {
-      setLoading(false);
+      setLoadingExpenses(false);
     }
   };
 
   const loadSettings = async () => {
     try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user-settings`);
       const savedCurrency = localStorage.getItem("currency") || "₹";
       const savedTheme = localStorage.getItem("theme") || "dark";
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/expenses/settings`
-      );
-
-      setSettings((prev) => ({
+      
+      setSettings({
         ...response.data,
         currency: savedCurrency,
         theme: savedTheme,
-      }));
+      });
 
       // Apply theme based on localStorage, not backend response
       if (savedTheme === "dark") {
@@ -126,6 +122,23 @@ const App = () => {
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
+  // Show loading screen
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show sign-in page if not authenticated
+  if (!user) {
+    return <GoogleSignIn />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -136,7 +149,9 @@ const App = () => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">ET</span>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Expense Tracker</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Expense Tracker
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -151,7 +166,26 @@ const App = () => {
               >
                 Clear Data
               </button>
-              <span className="text-sm text-gray-500 dark:text-gray-400">Welcome back!</span>
+              <div className="flex items-center space-x-3">
+                {user.picture && (
+                  <img
+                    src={`http://localhost:8000/auth/proxy-image?url=${encodeURIComponent(
+                      user.picture
+                    )}`}
+                    alt="User profile"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                )}
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Welcome, {user.name}!
+                </span>
+                <button
+                  onClick={logout}
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -163,11 +197,11 @@ const App = () => {
           <nav className="p-6">
             <div className="space-y-2">
               <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => setActiveTab("dashboard")}
                 className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                  activeTab === 'dashboard'
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-medium'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-300'
+                  activeTab === "dashboard"
+                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-medium"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-300"
                 }`}
               >
                 📊 Dashboard
@@ -195,11 +229,18 @@ const App = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Expenses</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{settings.currency}{totalExpenses.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Total Expenses
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {settings.currency}
+                    {totalExpenses.toLocaleString()}
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                  <span className="text-blue-600 dark:text-blue-400 text-xl">💰</span>
+                  <span className="text-blue-600 dark:text-blue-400 text-xl">
+                    💰
+                  </span>
                 </div>
               </div>
             </div>
@@ -207,11 +248,17 @@ const App = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">This Month</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{expenses.length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    This Month
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {expenses.length}
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                  <span className="text-green-600 dark:text-green-400 text-xl">📅</span>
+                  <span className="text-green-600 dark:text-green-400 text-xl">
+                    📅
+                  </span>
                 </div>
               </div>
             </div>
@@ -219,13 +266,20 @@ const App = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Average</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Average
+                  </p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {settings.currency}{expenses.length > 0 ? (totalExpenses / expenses.length).toFixed(0) : 0}
+                    {settings.currency}
+                    {expenses.length > 0
+                      ? (totalExpenses / expenses.length).toFixed(0)
+                      : 0}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                  <span className="text-purple-600 dark:text-purple-400 text-xl">📊</span>
+                  <span className="text-purple-600 dark:text-purple-400 text-xl">
+                    📊
+                  </span>
                 </div>
               </div>
             </div>
@@ -234,8 +288,12 @@ const App = () => {
           {/* Header with Add Button */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Recent Expenses</h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Track your spending and manage your budget</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Recent Expenses
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Track your spending and manage your budget
+              </p>
             </div>
             <button
               onClick={() => setShowAddModal(true)}
@@ -247,20 +305,28 @@ const App = () => {
           </div>
 
           {/* Expense List */}
-          {loading ? (
+          {loadingExpenses ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-center space-x-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading expenses...</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Loading expenses...
+                </p>
               </div>
             </div>
           ) : expenses.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 border border-gray-100 dark:border-gray-700 text-center">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-gray-400 dark:text-gray-500 text-2xl">📝</span>
+                <span className="text-gray-400 dark:text-gray-500 text-2xl">
+                  📝
+                </span>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No expenses found</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">Start tracking your expenses by adding your first one.</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No expenses found
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Start tracking your expenses by adding your first one.
+              </p>
               <button
                 onClick={() => setShowAddModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -281,7 +347,9 @@ const App = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Expense</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Add New Expense
+              </h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -291,30 +359,51 @@ const App = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Title
+                </label>
                 <input
                   type="text"
                   value={newExpense.title}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="e.g., Groceries"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Amount</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Amount
+                </label>
                 <input
                   type="number"
                   value={newExpense.amount}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="0.00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category
+                </label>
                 <select
                   value={newExpense.category}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 >
                   <option value="Other">Other</option>
@@ -327,11 +416,15 @@ const App = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Date
+                </label>
                 <input
                   type="date"
                   value={newExpense.date}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))}
+                  onChange={(e) =>
+                    setNewExpense((prev) => ({ ...prev, date: e.target.value }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -355,10 +448,20 @@ const App = () => {
       )}
 
       {/* Settings Modal */}
-      {showSettings && <Settings onClose={() => setShowSettings(false)} onSettingsUpdate={handleSettingsUpdate} />}
+      {showSettings && (
+        <Settings
+          onClose={() => setShowSettings(false)}
+          onSettingsUpdate={handleSettingsUpdate}
+        />
+      )}
 
       {/* Reports Modal */}
-      {showReports && <Reports onClose={() => setShowReports(false)} currency={settings.currency} />}
+      {showReports && (
+        <Reports
+          onClose={() => setShowReports(false)}
+          currency={settings.currency}
+        />
+      )}
     </div>
   );
 };
