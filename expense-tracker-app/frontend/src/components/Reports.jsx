@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getCategoryEmoji, getCategoryColor } from '../utils/categoryMapping';
 
 const Reports = ({ onClose, currency = '₹' }) => {
   const [reports, setReports] = useState({
@@ -16,27 +17,22 @@ const Reports = ({ onClose, currency = '₹' }) => {
 
   const loadReports = async () => {
     try {
-      const [summaryRes, categoriesRes, monthlyRes] = await Promise.all([
+      const [summaryResponse, categoriesResponse, monthlyResponse] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL}/expenses/reports/summary`),
         axios.get(`${import.meta.env.VITE_API_URL}/expenses/reports/categories`),
         axios.get(`${import.meta.env.VITE_API_URL}/expenses/reports/monthly`)
       ]);
 
       setReports({
-        summary: summaryRes.data,
-        categories: categoriesRes.data,
-        monthly: monthlyRes.data
+        summary: summaryResponse.data,
+        categories: categoriesResponse.data,
+        monthly: monthlyResponse.data
       });
     } catch (error) {
       console.error('Error loading reports:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getCategoryColor = (index) => {
-    const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-purple-500', 'bg-pink-500'];
-    return colors[index % colors.length];
   };
 
   if (loading) {
@@ -137,10 +133,12 @@ const Reports = ({ onClose, currency = '₹' }) => {
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Categories</h4>
               <div className="space-y-3">
-                {reports.summary.categories.slice(0, 5).map((category, index) => (
+                {reports.summary.categories.slice(0, 5).map((category) => (
                   <div key={category.category} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-4 h-4 ${getCategoryColor(index)} rounded-full`}></div>
+                      <div className={`w-4 h-4 ${getCategoryColor(category.category)} rounded-full flex items-center justify-center`}>
+                        <span className="text-xs">{getCategoryEmoji(category.category)}</span>
+                      </div>
                       <span className="text-gray-700 dark:text-gray-300">{category.category}</span>
                     </div>
                     <div className="text-right">
@@ -162,14 +160,14 @@ const Reports = ({ onClose, currency = '₹' }) => {
         {activeTab === 'categories' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {reports.categories.map((category, index) => (
+              {reports.categories.map((category) => (
                 <div key={category.category} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {category.category}
                     </h4>
-                    <div className={`w-8 h-8 ${getCategoryColor(index)} rounded-lg flex items-center justify-center`}>
-                      <span className="text-white text-sm">💰</span>
+                    <div className={`w-8 h-8 ${getCategoryColor(category.category)} rounded-lg flex items-center justify-center`}>
+                      <span className="text-white text-sm">{getCategoryEmoji(category.category)}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -191,7 +189,7 @@ const Reports = ({ onClose, currency = '₹' }) => {
                   <div className="mt-4">
                     <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                       <div
-                        className={`${getCategoryColor(index)} h-2 rounded-full transition-all duration-300`}
+                        className={`${getCategoryColor(category.category)} h-2 rounded-full transition-all duration-300`}
                         style={{ width: `${category.percentage}%` }}
                       ></div>
                     </div>
@@ -211,7 +209,9 @@ const Reports = ({ onClose, currency = '₹' }) => {
                 {reports.monthly.map((month, index) => (
                   <div key={month.month} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg">
                     <div className="flex items-center space-x-4">
-                      <div className={`w-4 h-4 ${getCategoryColor(index)} rounded-full`}></div>
+                      <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-xs">📅</span>
+                      </div>
                       <span className="text-gray-700 dark:text-gray-300 font-medium">{month.month}</span>
                     </div>
                     <div className="text-right">

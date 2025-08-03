@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
 const GoogleSignIn = () => {
   const { login } = useAuth();
@@ -43,7 +44,7 @@ const GoogleSignIn = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 w-full max-w-md mx-4">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">ET</span>
+            <CurrencyDollarIcon className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Expense Tracker
@@ -67,4 +68,4 @@ const GoogleSignIn = () => {
   );
 };
 
-export default GoogleSignIn; 
+export default GoogleSignIn;

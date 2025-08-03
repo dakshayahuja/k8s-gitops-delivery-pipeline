@@ -6,6 +6,7 @@ from models.expense_model import Expense
 from models.user_model import User
 from crud import expense_crud
 from core.auth import get_current_user
+from core.categories import get_available_categories, get_random_title_for_category
 from typing import List, Dict, Any
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
@@ -29,6 +30,7 @@ def read_expenses(
 
 @router.post("/seed", response_model=List[ExpenseResponse])
 def seed_expenses(
+    count: int = 10,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -39,19 +41,21 @@ def seed_expenses(
     db.query(Expense).filter(Expense.user_id == current_user.id).delete()
     db.commit()
 
-    categories = ["Food", "Entertainment", "Health", "Utilities", "Transport", "Shopping", "Other"]
-    titles = [
-        "Groceries", "Movie Night", "Gym Membership", "Internet Bill", "Coffee",
-        "Uber Ride", "Restaurant", "Netflix", "Phone Bill", "Gas Station", "Miscellaneous"
-    ]
+    # Get available categories from global configuration
+    available_categories = get_available_categories()
 
     seed_data = []
-    for i in range(10):
+    for i in range(count):
+        # Select a random category
+        category = random.choice(available_categories)
+        # Get a random title for that category
+        title = get_random_title_for_category(category)
+
         expense = Expense(
             user_id=current_user.id,
-            title=random.choice(titles),
+            title=title,
             amount=round(random.uniform(50, 1000), 2),
-            category=random.choice(categories),
+            category=category,
             date=datetime.now() - timedelta(days=random.randint(0, 30))
         )
         seed_data.append(expense)
