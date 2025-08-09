@@ -1,14 +1,31 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
-const GoogleSignIn = () => {
+const GOOGLE_SRC = "https://accounts.google.com/gsi/client";
+
+export default function GoogleSignIn() {
   const { login } = useAuth();
   const googleButtonRef = useRef(null);
+  const initializedRef = useRef(false);
+  const [error, setError] = useState(null);
+
+  const handleCredentialResponse = async (response) => {
+    try {
+      const idToken = response?.credential;
+      if (!idToken) throw new Error("No credential returned from Google");
+      const ok = await login(idToken);
+      if (!ok) throw new Error("Login failed");
+    } catch (e) {
+      setError(e.message || "Sign-in failed");
+    }
+  };
 
   useEffect(() => {
-    // Initialize Google Sign-In
-    if (window.google) {
+    const init = () => {
+      if (initializedRef.current) return;
+      if (!window.google?.accounts?.id) return;
+
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
@@ -16,28 +33,36 @@ const GoogleSignIn = () => {
         cancel_on_tap_outside: true,
       });
 
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        type: 'standard',
-        text: 'signin_with',
-        shape: 'rectangular',
-        logo_alignment: 'left',
-      });
-    }
-  }, []);
-
-  const handleCredentialResponse = async (response) => {
-    try {
-      const success = await login(response.credential);
-      if (!success) {
-        alert('Login failed. Please try again.');
+      if (googleButtonRef.current) {
+        window.google.accounts.id.renderButton(googleButtonRef.current, {});
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      initializedRef.current = true;
+    };
+
+    const existing = document.querySelector(`script[src="${GOOGLE_SRC}"]`);
+    if (window.google?.accounts?.id) {
+      init();
+      return;
     }
-  };
+
+    if (existing) {
+      existing.addEventListener("load", init, { once: true });
+      return () => existing.removeEventListener("load", init);
+    }
+
+    const s = document.createElement("script");
+    s.src = GOOGLE_SRC;
+    s.async = true;
+    s.defer = true;
+    s.onload = init;
+    s.onerror = () => setError("Failed to load Google Sign-In");
+    document.head.appendChild(s);
+
+    return () => {
+      s.onload = null;
+      s.onerror = null;
+    };
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
@@ -53,11 +78,16 @@ const GoogleSignIn = () => {
             Sign in to manage your expenses
           </p>
         </div>
-        
+
         <div className="flex justify-center">
           <div ref={googleButtonRef}></div>
         </div>
-        
+        {error && (
+          <p className="mt-4 text-sm text-red-600 dark:text-red-400 text-center">
+            {error}
+          </p>
+        )}
+
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Your data will be securely stored and only accessible to you
@@ -66,6 +96,4 @@ const GoogleSignIn = () => {
       </div>
     </div>
   );
-};
-
-export default GoogleSignIn;
+}

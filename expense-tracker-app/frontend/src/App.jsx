@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import ExpenseList from "./components/ExpenseList";
 import Settings from "./components/Settings";
@@ -9,6 +9,22 @@ import { getAvailableCategories } from "./utils/categoryMapping";
 
 const App = () => {
   const { user, loading, logout } = useAuth();
+  const [avatarSrc, setAvatarSrc] = useState(null);
+  useEffect(() => {
+    setAvatarSrc(user?.picture || null);
+  }, [user?.picture]);
+
+  const handleAvatarError = () => setAvatarSrc(null);
+
+  const initials = useMemo(() => {
+    const n = user?.name || '';
+    return n
+      .split(' ')
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'U';
+  }, [user?.name]);
   const [expenses, setExpenses] = useState([]);
   const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -75,7 +91,7 @@ const App = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/user-settings`);
       const backendSettings = response.data;
-      
+
       // Use backend settings as primary source, fallback to localStorage
       setSettings({
         currency: backendSettings.currency || localStorage.getItem("currency") || "₹",
@@ -154,10 +170,10 @@ const App = () => {
         currency: newSettings.currency,
         theme: newSettings.theme
       });
-      
+
       // Update local state
       setSettings(newSettings);
-      
+
       // Also save to localStorage as backup
       localStorage.setItem("currency", newSettings.currency);
       localStorage.setItem("theme", newSettings.theme);
@@ -208,12 +224,23 @@ const App = () => {
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
                     className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   >
-                    {user.picture && (
-                      <img 
-                        src={user.picture} 
+                    {avatarSrc ? (
+                      <img
+                        src={avatarSrc}
                         alt={user.name}
-                        className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-600"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={handleAvatarError}
+                        className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-600 object-cover"
                       />
+                    ) : (
+                      <div
+                        className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center justify-center"
+                        aria-label={user?.name || 'User'}
+                        title={user?.name || ''}
+                      >
+                        {initials}
+                      </div>
                     )}
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {user.name}
@@ -222,7 +249,7 @@ const App = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  
+
                   {/* User Dropdown Menu */}
                   {showUserDropdown && (
                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
@@ -549,7 +576,7 @@ const App = () => {
                   <option value="custom">Custom number</option>
                 </select>
               </div>
-              
+
               {showCustomInput && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
