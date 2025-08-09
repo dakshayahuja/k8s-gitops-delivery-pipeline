@@ -8,4 +8,4 @@ spec:
     spec:
       containers:
       - name: app
-        image: ghcr.io/dakshayahuja/expense-backend:0.2
+        image: ghcr.io/dakshayahuja/expense-backend:2081a22d5f57
