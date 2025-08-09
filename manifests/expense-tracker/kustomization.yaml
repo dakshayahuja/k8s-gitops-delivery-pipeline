@@ -4,12 +4,12 @@ namespace: expense-tracker
 
 resources:
 - namespace.yaml
-- db-secret.yaml
 - postgres.yaml
 - backend.yaml
 - frontend-configmap.yaml
 - frontend.yaml
 - ingress.yaml
+- storageclass-gp3.yaml
 
 patches:
 - path: patches/patch-backend.yaml

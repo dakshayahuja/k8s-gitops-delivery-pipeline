@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 import os
 
 # Google OAuth configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "your-google-client-id")
-JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
@@ -29,16 +29,16 @@ def verify_google_token(token: str) -> dict:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid Google token"
             )
-        
+
         token_info = response.json()
-        
+
         # Verify the token is for our app
         if token_info.get("aud") != GOOGLE_CLIENT_ID:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token audience"
             )
-        
+
         return {
             "google_id": token_info.get("sub"),
             "email": token_info.get("email"),
@@ -83,14 +83,14 @@ def get_current_user(
     token = credentials.credentials
     payload = verify_jwt_token(token)
     user_id = payload.get("user_id")
-    
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
-    
+
     return user
 
 def get_or_create_user_settings(db: Session, user_id: int) -> UserSettings:
@@ -101,4 +101,4 @@ def get_or_create_user_settings(db: Session, user_id: int) -> UserSettings:
         db.add(settings)
         db.commit()
         db.refresh(settings)
-    return settings 
+    return settings

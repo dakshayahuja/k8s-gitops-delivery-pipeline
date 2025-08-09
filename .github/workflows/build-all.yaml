@@ -17,6 +17,10 @@ on:
         type: boolean
         default: true
         description: Build & push frontend image
+      create_backend_secret_only:
+        type: boolean
+        default: false
+        description: Create backend Kubernetes secret only (skip builds)
 
 permissions:
   contents: write
@@ -51,7 +55,6 @@ jobs:
   build_backend:
     runs-on: ubuntu-latest
     needs: changes
-    # run if files changed OR manual dispatch asked for backend
     if: needs.changes.outputs.backend == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend == 'true')
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
@@ -77,7 +80,6 @@ jobs:
   build_frontend:
     runs-on: ubuntu-latest
     needs: [changes, build_backend]
-    # run if files changed OR manual dispatch asked for frontend
     if: needs.changes.outputs.frontend == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build_frontend == 'true')
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
@@ -99,6 +101,46 @@ jobs:
           tags: |
             ghcr.io/dakshayahuja/expense-frontend:${{ steps.meta.outputs.TAG }}
             ghcr.io/dakshayahuja/expense-frontend:latest
+          build-args: |
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+
+  apply_backend_secret:
+    name: Apply backend K8s Secret
+    runs-on: ubuntu-latest
+    if: (needs.build_backend.result == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_backend_secret_only == 'true')
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: gha-k8s-secret
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig \
+            --name gitops-delivery-cluster \
+            --region us-east-1
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl get ns expense-tracker || kubectl create ns expense-tracker
+
+      - name: Create/Update backend secret
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          kubectl -n expense-tracker create secret generic backend-secrets \
+            --from-literal=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+            --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
   bump_manifests:
     runs-on: ubuntu-latest
