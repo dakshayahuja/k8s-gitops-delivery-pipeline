@@ -11,10 +11,12 @@ controller:
   ingressClass: nginx
 
   service:
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-type: "external"
-    externalTrafficPolicy: Local
     type: LoadBalancer
+    externalTrafficPolicy: Local
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
 
   publishService:
     enabled: true

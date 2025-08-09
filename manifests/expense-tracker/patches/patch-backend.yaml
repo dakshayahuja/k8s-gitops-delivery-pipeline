@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: expense-tracker
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: ghcr.io/dakshayahuja/expense-backend:0.2
