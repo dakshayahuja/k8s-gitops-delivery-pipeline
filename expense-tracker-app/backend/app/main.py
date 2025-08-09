@@ -9,8 +9,7 @@ app = FastAPI(title="Expense Tracker API")
 # CORS config for frontend to call backend APIs
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to your frontend domain later
-    allow_credentials=True,
+    allow_origins=["https://k8s.dakshayahuja.in"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

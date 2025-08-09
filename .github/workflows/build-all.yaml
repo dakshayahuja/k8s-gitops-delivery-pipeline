@@ -1,41 +1,22 @@
-name: build-all
+name: build-full-stack
 on:
   push:
     branches: [main]
     paths:
       - "expense-tracker-app/**"
-      - ".github/workflows/build-all.yaml"
       - "manifests/expense-tracker/**"
-
-  workflow_dispatch:
-    inputs:
-      build_backend:
-        type: boolean
-        default: true
-        description: Build & push backend image
-      build_frontend:
-        type: boolean
-        default: true
-        description: Build & push frontend image
-      create_backend_secret_only:
-        type: boolean
-        default: false
-        description: Create backend Kubernetes secret only (skip builds)
+      - ".github/workflows/expense-auto.yml"
 
 permissions:
   contents: write
   packages: write
   id-token: write
 
-concurrency:
-  group: kustomize-image-bumps
-  cancel-in-progress: false
-
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  changes:
+  detect-changes:
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -52,10 +33,10 @@ jobs:
             frontend:
               - 'expense-tracker-app/frontend/**'
 
-  build_backend:
+  build-backend:
     runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.backend == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend == 'true')
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
     steps:
@@ -77,10 +58,10 @@ jobs:
             ghcr.io/dakshayahuja/expense-backend:${{ steps.meta.outputs.TAG }}
             ghcr.io/dakshayahuja/expense-backend:latest
 
-  build_frontend:
+  build-frontend:
     runs-on: ubuntu-latest
-    needs: [changes, build_backend]
-    if: needs.changes.outputs.frontend == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build_frontend == 'true')
+    needs: [detect-changes, build-backend]
+    if: needs.detect-changes.outputs.frontend == 'true'
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
     steps:
@@ -105,13 +86,13 @@ jobs:
             VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
 
-  apply_backend_secret:
+  apply-backend-secret:
     name: Apply backend K8s Secret
     runs-on: ubuntu-latest
-    if: (needs.build_backend.result == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_backend_secret_only == 'true')
+    needs: [build-backend]
+    if: needs.build-backend.result == 'success'
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
@@ -120,13 +101,10 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: 'latest'
+          version: latest
 
       - name: Update kubeconfig for EKS
-        run: |
-          aws eks update-kubeconfig \
-            --name gitops-delivery-cluster \
-            --region us-east-1
+        run: aws eks update-kubeconfig --name gitops-delivery-cluster --region us-east-1
 
       - name: Ensure namespace exists
         run: |
@@ -142,49 +120,30 @@ jobs:
             --from-literal=JWT_SECRET="$JWT_SECRET" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-  bump_manifests:
+  bump-manifests:
     runs-on: ubuntu-latest
-    needs: [build_backend, build_frontend]
-    if: needs.build_backend.result == 'success' || needs.build_frontend.result == 'success'
+    needs: [build-backend, build-frontend]
+    if: needs.build-backend.result == 'success' || needs.build-frontend.result == 'success'
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - name: Rebase on latest main
+      - name: Rebase
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git pull --rebase origin ${{ github.ref_name }}
-      - name: Update image tags that were built in this run
+      - name: Update image tags
         shell: bash
         run: |
-          BACKEND_PATCH=manifests/expense-tracker/patches/patch-backend.yaml
-          FRONTEND_PATCH=manifests/expense-tracker/patches/patch-frontend.yaml
-
-          # Update backend image tag in patch (if we built backend)
-          if [ "${{ needs.build_backend.result }}" = "success" ]; then
-            B_TAG='${{ needs.build_backend.outputs.tag }}'
-            sed -i -E "s|(image:\s*ghcr\.io/dakshayahuja/expense-backend:).*|\1${B_TAG}|" "$BACKEND_PATCH"
+          B_PATCH=manifests/expense-tracker/patches/patch-backend.yaml
+          F_PATCH=manifests/expense-tracker/patches/patch-frontend.yaml
+          if [ "${{ needs.build-backend.result }}" = "success" ]; then
+            sed -i -E "s|(image:\s*ghcr\.io/dakshayahuja/expense-backend:).*|\1${{ needs.build-backend.outputs.tag }}|" "$B_PATCH"
           fi
-
-          # Update frontend image tag in patch (if we built frontend)
-          if [ "${{ needs.build_frontend.result }}" = "success" ]; then
-            F_TAG='${{ needs.build_frontend.outputs.tag }}'
-            sed -i -E "s|(image:\s*ghcr\.io/dakshayahuja/expense-frontend:).*|\1${F_TAG}|" "$FRONTEND_PATCH"
+          if [ "${{ needs.build-frontend.result }}" = "success" ]; then
+            sed -i -E "s|(image:\s*ghcr\.io/dakshayahuja/expense-frontend:).*|\1${{ needs.build-frontend.outputs.tag }}|" "$F_PATCH"
           fi
-
-      - name: Compute commit message
-        id: commit_msg
-        run: |
-          msg="ci: bump"
-          if [ "${{ needs.build_backend.result }}" = "success" ]; then
-            msg="$msg backend->${{ needs.build_backend.outputs.tag }}"
-          fi
-          if [ "${{ needs.build_frontend.result }}" = "success" ]; then
-            msg="$msg frontend->${{ needs.build_frontend.outputs.tag }}"
-          fi
-          echo "message=$msg" >> "$GITHUB_OUTPUT"
-
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: ${{ steps.commit_msg.outputs.message }}
+          commit_message: "ci(auto): bump images"
           branch: ${{ github.ref_name }}
