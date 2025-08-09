@@ -1,5 +1,5 @@
 #!/bin/bash
-source "$(dirname "$0")/../.env"
+source "../.env"
 DOMAIN="$GODADDY_DOMAIN"
 RECORD_NAME="$GODADDY_RECORD_NAME"
 API_KEY="$GODADDY_API_KEY"
