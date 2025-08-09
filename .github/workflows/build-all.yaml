@@ -55,9 +55,9 @@ jobs:
   build_backend:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.backend == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend == 'true')
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
+      built: ${{ steps.decide.outputs.built }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -66,20 +66,33 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Decide build
+        id: decide
+        run: |
+          if [[ "${{ needs.changes.outputs.backend }}" == "true" || ( "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.build_backend }}" == "true" ) ]]; then
+            echo "built=true" >> $GITHUB_OUTPUT
+          else
+            echo "built=false" >> $GITHUB_OUTPUT
+          fi
       - name: Compute tag
+        if: steps.decide.outputs.built == 'true'
         id: meta
         run: echo "TAG=${GITHUB_SHA::12}" >> $GITHUB_OUTPUT
       - uses: docker/build-push-action@v6
+        if: steps.decide.outputs.built == 'true'
         with:
           context: ./expense-tracker-app/backend
           push: true
           tags: |
             ghcr.io/dakshayahuja/expense-backend:${{ steps.meta.outputs.TAG }}
             ghcr.io/dakshayahuja/expense-backend:latest
+      - name: Skip backend build
+        if: steps.decide.outputs.built != 'true'
+        run: echo "Skipping backend build (no changes and not requested)"
 
   build_frontend:
     runs-on: ubuntu-latest
-    needs: [changes, build_backend]
+    needs: [build_backend]
     if: needs.changes.outputs.frontend == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build_frontend == 'true')
     outputs:
       tag: ${{ steps.meta.outputs.TAG }}
@@ -108,7 +121,8 @@ jobs:
   apply_backend_secret:
     name: Apply backend K8s Secret
     runs-on: ubuntu-latest
-    if: (needs.build_backend.result == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_backend_secret_only == 'true')
+    needs: [build_backend]
+    if: needs.build_backend.outputs.built == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_backend_secret_only == 'true')
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -145,7 +159,7 @@ jobs:
   bump_manifests:
     runs-on: ubuntu-latest
     needs: [build_backend, build_frontend]
-    if: needs.build_backend.result == 'success' || needs.build_frontend.result == 'success'
+    if: needs.build_backend.outputs.built == 'true' || needs.build_frontend.result == 'success'
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -161,7 +175,7 @@ jobs:
           FRONTEND_PATCH=manifests/expense-tracker/patches/patch-frontend.yaml
 
           # Update backend image tag in patch (if we built backend)
-          if [ "${{ needs.build_backend.result }}" = "success" ]; then
+          if [ "${{ needs.build_backend.outputs.built }}" = "true" ]; then
             B_TAG='${{ needs.build_backend.outputs.tag }}'
             sed -i -E "s|(image:\s*ghcr\.io/dakshayahuja/expense-backend:).*|\1${B_TAG}|" "$BACKEND_PATCH"
           fi
@@ -176,7 +190,7 @@ jobs:
         id: commit_msg
         run: |
           msg="ci: bump"
-          if [ "${{ needs.build_backend.result }}" = "success" ]; then
+          if [ "${{ needs.build_backend.outputs.built }}" = "true" ]; then
             msg="$msg backend->${{ needs.build_backend.outputs.tag }}"
           fi
           if [ "${{ needs.build_frontend.result }}" = "success" ]; then
