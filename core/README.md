@@ -16,6 +16,8 @@ helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manag
 
 helm upgrade --install kube-prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace --values core/monitoring/kube-prometheus-values.yaml
 
+kubectl apply -f ../core/cluster-issuer.yaml
+
 kubectl port-forward service/argocd-server -n argocd 8080:443
 
 password=(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
