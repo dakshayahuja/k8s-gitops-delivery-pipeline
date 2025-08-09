@@ -9,11 +9,13 @@ server:
   extraArgs:
   - --insecure
   - --rootpath=/argocd
+  - --basehref=/argocd
 
 configs:
   params:
     server.insecure: true
     server.rootpath: /argocd
+    server.basehref: /argocd
   secret: {}
 
 dex:
