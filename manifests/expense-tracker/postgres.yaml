@@ -1,14 +1,13 @@
 apiVersion: v1
-kind: Service
+kind: Secret
 metadata:
-  name: postgres
+  name: expense-db
   namespace: expense-tracker
-spec:
-  ports:
-  - port: 5432
-    targetPort: 5432
-  selector:
-    app: postgres
+type: Opaque
+stringData:
+  POSTGRES_DB: expenses
+  POSTGRES_USER: expense
+  POSTGRES_PASSWORD: expensetracker
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -47,3 +46,15 @@ spec:
       resources:
         requests:
           storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: expense-tracker
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
