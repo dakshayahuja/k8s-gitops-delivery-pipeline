@@ -42,9 +42,16 @@ kind: Service
 metadata:
   name: backend
   namespace: expense-tracker
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: expense-tracker
 spec:
   ports:
-  - port: 8000
+  - name: http
+    port: 8000
     targetPort: 8000
+  - name: metrics-port
+    port: 9100
+    targetPort: 9100
   selector:
     app: backend

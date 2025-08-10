@@ -8,3 +8,4 @@ alembic
 PyJWT
 requests
 httpx
+prometheus_fastapi_instrumentator

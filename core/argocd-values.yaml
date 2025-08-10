@@ -1,5 +1,17 @@
 controller:
   replicas: 1
+  metrics:
+    enabled: true
+  server:
+    metrics:
+      enabled: true
+  repoServer:
+    metrics:
+      enabled: true
+
+applicationSet:
+  metrics:
+    enabled: true
 
 server:
   service:
@@ -10,6 +22,10 @@ server:
   - --insecure
   - --rootpath=/argocd
   - --basehref=/argocd
+  serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus
 
 configs:
   params:

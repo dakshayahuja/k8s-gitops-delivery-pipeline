@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from api import expense_routes, auth_routes, user_settings_routes
 from db.database import engine, Base
 from core.migrate import run_migrations
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(title="Expense Tracker API")
+
+# Add Prometheus instrumentation
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # CORS config for frontend to call backend APIs
 app.add_middleware(

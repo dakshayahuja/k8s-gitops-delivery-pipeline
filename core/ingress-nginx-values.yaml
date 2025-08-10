@@ -23,3 +23,11 @@ controller:
 
   metrics:
     enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+      namespaceSelector:
+        any: true
+      interval: 15s
+      additionalLabels:
+        release: kube-prometheus
