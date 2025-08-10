@@ -87,7 +87,7 @@ npm run dev
 - **Pydantic**: Data validation and serialization
 
 ### **Frontend (React)**
-- **React 19**: Latest React with hooks and modern patterns
+- **React 18**: Latest React with hooks and modern patterns
 - **Vite**: Fast build tool and development server
 - **Tailwind CSS**: Utility-first CSS with dark mode support
 - **Axios**: HTTP client for API communication
@@ -100,17 +100,17 @@ npm run dev
 ## 📚 API Endpoints
 
 ### **Core Expense Operations**
-- `GET /expenses` - Retrieve all expenses
-- `POST /expenses` - Create new expense
-- `PUT /expenses/{id}` - Update existing expense
-- `DELETE /expenses/{id}` - Remove expense
-- `POST /expenses/seed` - Generate sample data
+- `GET /api/expenses` - Retrieve all expenses
+- `POST /api/expenses` - Create new expense
+- `PUT /api/expenses/{id}` - Update existing expense
+- `DELETE /api/expenses/{id}` - Remove expense
+- `POST /api/expenses/seed` - Generate sample data
 
 ### **Analytics & Reports**
-- `GET /expenses/reports/summary` - Get summary statistics
-- `GET /expenses/reports/categories` - Category breakdown
-- `GET /expenses/reports/monthly` - Monthly trends
+- `GET /api/expenses/reports/summary` - Get summary statistics
+- `GET /api/expenses/reports/categories` - Category breakdown
+- `GET /api/expenses/reports/monthly` - Monthly trends
 
 ### **Settings Management**
-- `GET /expenses/settings` - Retrieve current settings
-- `PUT /expenses/settings` - Update user preferences
+- `GET /api/user-settings` - Retrieve current settings
+- `PUT /api/user-settings` - Update user preferences

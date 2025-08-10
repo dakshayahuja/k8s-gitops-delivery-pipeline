@@ -67,26 +67,25 @@ The API will be available at `http://localhost:8000`
 ## API Endpoints
 
 ### Authentication
-- `POST /auth/google` - Sign in with Google token
-- `GET /auth/me` - Get current user info
-- `POST /auth/logout` - Logout user
+- `POST /api/auth/google` - Sign in with Google token
+- `GET /api/auth/me` - Get current user info
+- `POST /api/auth/logout` - Logout user
 
 ### User Settings
-- `GET /user-settings` - Get user settings
-- `PUT /user-settings` - Update user settings
+- `GET /api/user-settings` - Get user settings
+- `PUT /api/user-settings` - Update user settings
 
 ### Expenses
-- `GET /expenses` - Get user's expenses
-- `POST /expenses` - Create new expense
-- `PUT /expenses/{id}` - Update expense
-- `DELETE /expenses/{id}` - Delete expense
-- `POST /expenses/seed` - Seed sample data
-- `DELETE /expenses/clear` - Clear all expenses
+- `GET /api/expenses` - Get user's expenses
+- `POST /api/expenses` - Create new expense
+- `PUT /api/expenses/{id}` - Update expense
+- `DELETE /api/expenses/{id}` - Delete expense
+- `POST /api/expenses/seed` - Seed sample data
 
 ### Reports
-- `GET /expenses/reports/categories` - Category report
-- `GET /expenses/reports/monthly` - Monthly report
-- `GET /expenses/reports/summary` - Summary statistics
+- `GET /api/expenses/reports/categories` - Category report
+- `GET /api/expenses/reports/monthly` - Monthly report
+- `GET /api/expenses/reports/summary` - Summary statistics
 
 ## Database Schema
 
