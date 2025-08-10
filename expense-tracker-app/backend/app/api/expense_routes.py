@@ -9,7 +9,7 @@ from core.auth import get_current_user
 from core.categories import get_available_categories, get_random_title_for_category
 from typing import List, Dict, Any
 
-router = APIRouter(prefix="/expenses", tags=["Expenses"])
+router = APIRouter(tags=["Expenses"])
 
 @router.post("/", response_model=ExpenseResponse)
 def create_expense(

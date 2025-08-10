@@ -7,7 +7,7 @@ from models.user_settings_model import UserSettings
 from pydantic import BaseModel
 from typing import Optional
 
-router = APIRouter(prefix="/user-settings", tags=["User Settings"])
+router = APIRouter(tags=["User Settings"])
 
 class UserSettingsRequest(BaseModel):
     theme: Optional[str] = None
@@ -17,7 +17,7 @@ class UserSettingsResponse(BaseModel):
     theme: str
     currency: str
 
-@router.get("/", response_model=UserSettingsResponse)
+@router.get("", response_model=UserSettingsResponse)
 def get_user_settings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -29,7 +29,7 @@ def get_user_settings(
         currency=settings.currency
     )
 
-@router.put("/", response_model=UserSettingsResponse)
+@router.put("", response_model=UserSettingsResponse)
 def update_user_settings(
     settings_data: UserSettingsRequest,
     current_user: User = Depends(get_current_user),

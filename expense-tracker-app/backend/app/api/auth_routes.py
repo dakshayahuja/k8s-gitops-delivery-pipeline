@@ -10,7 +10,7 @@ from fastapi import Response
 import httpx
 from fastapi import Query
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 class GoogleTokenRequest(BaseModel):
     token: str

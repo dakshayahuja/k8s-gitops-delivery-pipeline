@@ -20,6 +20,6 @@ def ping():
 
 run_migrations()
 
-app.include_router(auth_routes.router, prefix="/api")
-app.include_router(user_settings_routes.router, prefix="/api")
-app.include_router(expense_routes.router, prefix="/api")
+app.include_router(auth_routes.router, prefix="/api/auth")
+app.include_router(user_settings_routes.router, prefix="/api/user-settings")
+app.include_router(expense_routes.router, prefix="/api/expenses")
