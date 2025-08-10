@@ -84,7 +84,7 @@ jobs:
             ghcr.io/dakshayahuja/expense-frontend:latest
           build-args: |
             VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
 
   apply-backend-secret:
     name: Apply backend K8s Secret
