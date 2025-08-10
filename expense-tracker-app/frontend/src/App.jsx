@@ -185,6 +185,36 @@ const App = () => {
     }
   };
 
+  const handleUpdateExpense = async (expenseId, updatedData) => {
+    try {
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/expenses/${expenseId}`, updatedData);
+      
+      // Update the expense in local state
+      setExpenses(prevExpenses => 
+        prevExpenses.map(expense => 
+          expense.id === expenseId ? response.data : expense
+        )
+      );
+    } catch (error) {
+      console.error("Error updating expense:", error);
+      throw error;
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/expenses/${expenseId}`);
+      
+      // Remove the expense from local state
+      setExpenses(prevExpenses => 
+        prevExpenses.filter(expense => expense.id !== expenseId)
+      );
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      alert('Error deleting expense');
+    }
+  };
+
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   // Show loading screen
@@ -411,7 +441,12 @@ const App = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <ExpenseList expenses={expenses} currency={settings.currency} />
+              <ExpenseList 
+                expenses={expenses} 
+                currency={settings.currency}
+                onUpdate={handleUpdateExpense}
+                onDelete={handleDeleteExpense}
+              />
             </div>
           )}
         </main>
